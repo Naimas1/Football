@@ -1,0 +1,39 @@
+CREATE PROCEDURE FillRandomMatches
+AS
+BEGIN
+    DECLARE @TeamCount INT
+    DECLARE @MatchDate DATE
+    DECLARE @GoalsTeam1 INT
+    DECLARE @GoalsTeam2 INT
+    DECLARE @Scorer NVARCHAR(100)
+
+    SET @TeamCount = (SELECT COUNT(*) FROM Teams)
+
+    -- Loop through a set number of iterations to add random matches
+    DECLARE @i INT = 1
+    WHILE @i <= 10 -- You can adjust the number of matches as needed
+    BEGIN
+        SET @MatchDate = DATEADD(day, RAND() * 365, '2023-01-01') -- Random date within the year
+        SET @GoalsTeam1 = CAST(RAND() * 5 AS INT) -- Random number of goals for Team 1 (up to 5)
+        SET @GoalsTeam2 = CAST(RAND() * 5 AS INT) -- Random number of goals for Team 2 (up to 5)
+        SET @Scorer = (SELECT TOP 1 FullName FROM Players ORDER BY NEWID()) -- Random scorer from existing players
+
+        -- Ensure Team1 and Team2 are different
+        WHILE @GoalsTeam1 = @GoalsTeam2
+        BEGIN
+            SET @GoalsTeam2 = CAST(RAND() * 5 AS INT)
+        END
+
+        -- Ensure there's at least one scorer
+        WHILE @Scorer IS NULL
+        BEGIN
+            SET @Scorer = (SELECT TOP 1 FullName FROM Players ORDER BY NEWID())
+        END
+
+        -- Insert random match into Matches table
+        INSERT INTO Matches (Team1Id, Team2Id, GoalsTeam1, GoalsTeam2, Scorer, MatchDate)
+        VALUES (CAST(RAND() * @TeamCount + 1 AS INT), CAST(RAND() * @TeamCount + 1 AS INT), @GoalsTeam1, @GoalsTeam2, @Scorer, @MatchDate)
+
+        SET @i = @i + 1
+    END
+END
